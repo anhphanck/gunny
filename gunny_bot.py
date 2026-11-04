@@ -3,11 +3,13 @@ import time
 import cv2
 import numpy as np
 import os
+import random
 
 # Cấu hình
 TEMPLATE_DIR = "templates"
 CONFIDENCE = 0.8  # Giảm xuống 0.8 để bot dễ tìm thấy nút hơn
-POWER_65_HOLD_TIME = 2.4  # Đã tăng lên 2.4s theo yêu cầu
+POWER_65_MIN = 2.35  # Lực bắn tối thiểu (thời gian giữ Space)
+POWER_65_MAX = 2.55  # Lực bắn tối đa (thời gian giữ Space)
 FAILSAFE_CORNER = (0, 0)
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuyển chuột về góc màn hình
@@ -109,8 +111,8 @@ def fight():
         # Nếu là lần bắn thứ 3, nhấn thêm phím 'e' trước
         if i == 3:
             print("Lần bắn thứ 3: Nhấn phím 'e' trước...")
-            pyautogui.press('e')
-            time.sleep(0.5)
+            pyautogui.press(['e', 'c'])
+            time.sleep(0.25)
             
         print("Sử dụng kỹ năng 1, 2, 4...")
         pyautogui.press('1')
@@ -122,20 +124,21 @@ def fight():
         
         time.sleep(0.5)
         
-        print(f"Bắn lực 65 (giữ Space trong {POWER_65_HOLD_TIME}s)...")
+        hold_time = random.uniform(POWER_65_MIN, POWER_65_MAX)
+        print(f"Bắn lực 65 (giữ Space trong {hold_time:.2f}s)...")
         pyautogui.keyDown('space')
-        time.sleep(POWER_65_HOLD_TIME)
+        time.sleep(hold_time)
         pyautogui.keyUp('space')
         
         if i < 5:
-            # Thời gian giãn cách mặc định là 9s
-            delay = 11
+            # Thời gian giãn cách mặc định ngẫu nhiên 11-12s
+            delay = random.uniform(11, 12)
             if i == 2:
-                delay = 13 # Lượt 3 thêm 2s (9+2)
+                delay = 13 # Lượt 3 thêm 2s (11+2)
             elif i == 3:
-                delay = 14 # Lượt 4 thêm 1s (9+1)
+                delay = 14 # Lượt 4 thêm 1s (13+1)
                 
-            print(f"Đợi {delay} giây cho lượt tiếp theo...")
+            print(f"Đợi {delay:.2f} giây cho lượt tiếp theo...")
             time.sleep(delay)
     
     print("Đã bắn xong 5 lần. Đợi 18s để nhận thưởng và quay lại phòng...")
