@@ -1,43 +1,92 @@
 import pyautogui
 import time
-import cv2
-import numpy as np
 import os
 import random
 
-# Cấu hình
+# ================== CẤU HÌNH ==================
 TEMPLATE_DIR = "templates"
-CONFIDENCE = 0.8  # Giảm xuống 0.8 để bot dễ tìm thấy nút hơn
-POWER_65_MIN = 2.35  # Lực bắn tối thiểu (thời gian giữ Space)
-POWER_65_MAX = 2.55  # Lực bắn tối đa (thời gian giữ Space)
-FAILSAFE_CORNER = (0, 0)
+CONFIDENCE = 0.8
 
-# Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuyển chuột về góc màn hình
+# Một phần tiêu đề cửa sổ game Gunny (không phân biệt hoa/thường).
+# Bot sẽ tự đưa cửa sổ này lên trước để click/phím vào đúng game.
+GAME_WINDOW_TITLE = "gunny"
+
+# Vị trí click để nhân vật chạy 1 đoạn, tính theo TỈ LỆ trong cửa sổ game (0.0 - 1.0).
+# 0.0 = mép trái/trên cửa sổ game, 1.0 = mép phải/dưới cửa sổ game.
+# Nhờ vậy điểm click luôn nằm trong game dù cửa sổ ở đâu trên màn hình.
+MOVE_CLICK_X_RATIO = 0.65
+MOVE_CLICK_Y_RATIO = 0.40
+
+# Góc ngắm mong muốn và góc mặc định mà game reset về đầu mỗi lượt.
+# DEFAULT_ANGLE: sửa cho khớp đúng con số góc hiện ra khi bắt đầu lượt.
+ANGLE_TARGET = 44
+DEFAULT_ANGLE = 20
+
+# Thời gian giữ Space tương ứng với lực 55 (bạn cân chỉnh).
+POWER_HOLD_MIN = 2.05
+POWER_HOLD_MAX = 2.15
+
+SHOT_COUNT = 4          # số lần bắn mỗi lượt
+SHOT_INTERVAL = 8       # giây giữa các lần bắn
+LOAD_WAIT = 8           # giây đợi game load vào trận
+DEATH_WAIT = 15         # giây đợi sau khi boss rồng giết nhân vật
+KEY_PRESS_DELAY = 0.05  # delay giữa các lần bấm phím chỉnh góc
+
+# Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
 pyautogui.FAILSAFE = True
 
 templates = {
-    "sua_thong_tin": os.path.join(TEMPLATE_DIR, "sua_thong_tin.png"),
-    "pho_ban_don": os.path.join(TEMPLATE_DIR, "pho_ban_don.png"),
-    "dung_si_5": os.path.join(TEMPLATE_DIR, "dung_si_5.png"),
-    "anh_hung": os.path.join(TEMPLATE_DIR, "anh_hung.png"),
-    "dong_y": os.path.join(TEMPLATE_DIR, "dong_y.png"),
-    "bat_dau": os.path.join(TEMPLATE_DIR, "bat_dau.png"),
-    "luot_cua_toi": os.path.join(TEMPLATE_DIR, "luot_cua_toi.png"),
-    "ket_thuc": os.path.join(TEMPLATE_DIR, "ket_thuc.png")
+    "boss_rong": os.path.join(TEMPLATE_DIR, "boss_rong.png")
 }
 
-def click_template(name, timeout=5, click=True, grayscale=True, confidence=None):
+
+def focus_game():
+    """Đưa cửa sổ game Gunny lên trước, trả về đối tượng cửa sổ (hoặc None nếu lỗi)."""
+    try:
+        windows = pyautogui.getWindowsWithTitle(GAME_WINDOW_TITLE)
+    except Exception as e:
+        print(f"Không lấy được danh sách cửa sổ: {e}")
+        return None
+
+    if not windows:
+        print(f"!! Không tìm thấy cửa sổ chứa tiêu đề '{GAME_WINDOW_TITLE}'.")
+        print("!! Các cửa sổ đang mở:")
+        try:
+            for w in pyautogui.getAllWindows():
+                if w.title.strip():
+                    print(f"   - {w.title}")
+        except Exception:
+            pass
+        print("!! Hãy sửa GAME_WINDOW_TITLE cho khớp.")
+        return None
+
+    win = windows[0]
+    try:
+        if win.isMinimized:
+            win.restore()
+            time.sleep(0.3)
+        win.activate()
+        time.sleep(0.5)
+    except Exception as e:
+        print(f"Không activate được cửa sổ game: {e}")
+
+    if getattr(win, "isActive", True) is False:
+        print("!! Cửa sổ game chưa lên trước. Hãy click tay vào game rồi chạy lại.")
+        return None
+    return win
+
+
+def click_template(name, timeout=5, click=True, confidence=None):
     path = templates.get(name)
     if not path or not os.path.exists(path):
         return False
-    
-    # Sử dụng confidence mặc định nếu không truyền vào
+
     search_confidence = confidence if confidence else CONFIDENCE
-    
+
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            locations = list(pyautogui.locateAllOnScreen(path, confidence=search_confidence, grayscale=grayscale))
+            locations = list(pyautogui.locateAllOnScreen(path, confidence=search_confidence, grayscale=True))
             for loc in locations:
                 center = pyautogui.center(loc)
                 if center.x < 200 and center.y < 200:
@@ -53,117 +102,92 @@ def click_template(name, timeout=5, click=True, grayscale=True, confidence=None)
         time.sleep(0.5)
     return False
 
-def wait_for_my_turn(timeout=60):
-    print("Đang đợi đến lượt...")
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        # Giảm confidence xuống 0.7 riêng cho lượt đánh để nhạy hơn
-        if click_template("luot_cua_toi", timeout=1, click=False, confidence=0.7):
+
+def set_angle(target):
+    """Chỉnh góc ngắm từ DEFAULT_ANGLE về target bằng phím ↑ / ↓."""
+    diff = target - DEFAULT_ANGLE
+    key = "up" if diff > 0 else "down"
+    for _ in range(abs(diff)):
+        pyautogui.press(key)
+        time.sleep(KEY_PRESS_DELAY)
+    print(f"Đã chỉnh góc về {target}")
+
+
+def move_to_boss(win):
+    """Cách 1 giây click di chuyển 1 lần để tìm boss rồng, khi thấy thì ấn vào boss."""
+    x = win.left + int(win.width * MOVE_CLICK_X_RATIO)
+    y = win.top + int(win.height * MOVE_CLICK_Y_RATIO)
+
+    attempt = 0
+    while True:
+        attempt += 1
+        print(f"[{attempt}] Click di chuyển nhân vật tại ({x}, {y})...")
+        pyautogui.moveTo(x, y, duration=0.2)
+        pyautogui.click()
+        time.sleep(1)  # cách 1 giây lại ấn di chuyển
+
+        # Tìm boss rồng, thấy thì ấn vào boss và xong bước di chuyển
+        if click_template("boss_rong", timeout=0.5, click=True):
             return True
-        if click_template("ket_thuc", timeout=1, click=False):
-            return False
-        time.sleep(0.5)
-    return False
 
-def setup_room():
-    print("--- Đang thiết lập phòng ---")
-    if not click_template("sua_thong_tin"): 
-        print("=> Lỗi: Không tìm thấy nút 'Sửa thông tin'")
-        return False
-    time.sleep(1.5)
-    
-    if not click_template("pho_ban_don"): 
-        print("=> Lỗi: Không tìm thấy tab 'Phó bản đơn'")
-        return False
-    time.sleep(1)
-    
-    if not click_template("dung_si_5"): 
-        print("=> Lỗi: Không tìm thấy phó bản 'Dũng sĩ luyện tập 5'. Bạn hãy kiểm tra lại ảnh mẫu này.")
-        return False
-    time.sleep(1)
-    
-    if not click_template("anh_hung"): 
-        print("=> Lỗi: Không tìm thấy nút mức độ 'Anh Hùng'")
-        return False
-    time.sleep(1)
-    
-    if not click_template("dong_y"): 
-        print("=> Lỗi: Không tìm thấy nút 'Đồng ý'")
-        return False
-    
-    print("Thiết lập phòng xong. Đợi 2s...")
-    time.sleep(2)
-    return True
 
-def fight():
-    print("Bấm nút Bắt đầu...")
-    if not click_template("bat_dau"): 
-        if not click_template("bat_dau", timeout=10):
-            return False
-    
-    print("Đang đợi game load vào trận (13s)...")
-    time.sleep(13) 
-    
-    # Thực hiện bắn 5 lần với thời gian giãn cách tùy chỉnh
-    for i in range(1, 6):
-        print(f"Thực hiện lượt bắn thứ {i}/5...")
-        
-        # Nếu là lần bắn thứ 3, nhấn thêm phím 'e' trước
-        if i == 3:
-            print("Lần bắn thứ 3: Nhấn phím 'e' trước...")
-            pyautogui.press(['e', 'c'])
-            time.sleep(0.25)
-            
-        print("Sử dụng kỹ năng 1, 2, 4...")
-        pyautogui.press('1')
-        time.sleep(0.5)
-        pyautogui.press('2')
-        time.sleep(0.5)
-        pyautogui.press('4')
-        time.sleep(0.5)
-        
-        time.sleep(0.5)
-        
-        hold_time = random.uniform(POWER_65_MIN, POWER_65_MAX)
-        print(f"Bắn lực 65 (giữ Space trong {hold_time:.2f}s)...")
-        pyautogui.keyDown('space')
+def shoot_round():
+    """Bắn SHOT_COUNT lần, mỗi lần cách nhau SHOT_INTERVAL giây."""
+    for i in range(1, SHOT_COUNT + 1):
+        print(f"--- Lượt bắn {i}/{SHOT_COUNT} ---")
+
+        # Lượt đầu tiên: ấn phím phải 1 lần để nhân vật quay sang phải
+        if i == 1:
+            print("Quay nhân vật sang phải...")
+            pyautogui.press("right")
+            time.sleep(0.3)
+
+        set_angle(ANGLE_TARGET)
+        time.sleep(0.3)
+
+        print("Dùng kỹ năng 1, 2, 4...")
+        for skill in ("1", "2", "4"):
+            pyautogui.press(skill)
+            time.sleep(0.4)
+
+        hold_time = random.uniform(POWER_HOLD_MIN, POWER_HOLD_MAX)
+        print(f"Bắn lực 55 (giữ Space trong {hold_time:.2f}s)...")
+        pyautogui.keyDown("space")
         time.sleep(hold_time)
-        pyautogui.keyUp('space')
-        
-        if i < 5:
-            # Thời gian giãn cách mặc định ngẫu nhiên 11-12s
-            delay = random.uniform(11, 12)
-            if i == 2:
-                delay = 13 # Lượt 3 thêm 2s (11+2)
-            elif i == 3:
-                delay = 14 # Lượt 4 thêm 1s (13+1)
-                
-            print(f"Đợi {delay:.2f} giây cho lượt tiếp theo...")
-            time.sleep(delay)
-    
-    print("Đã bắn xong 5 lần. Đợi 18s để nhận thưởng và quay lại phòng...")
-    time.sleep(18) 
-    return True
-    
-    print("Trận đấu quá lâu, tự động thoát...")
-    return False
+        pyautogui.keyUp("space")
+
+        if i < SHOT_COUNT:
+            print(f"Đợi {SHOT_INTERVAL}s cho lượt bắn tiếp theo...")
+            time.sleep(SHOT_INTERVAL)
+
 
 def main():
-    print("Tool Gunny PC Auto Start in 5 seconds...")
+    print("Tool Gunny Auto Boss Rồng Thế Giới - bắt đầu sau 5 giây...")
+    print("Hãy mở cửa sổ game Gunny lên trước.")
     time.sleep(5)
-    
+
     while True:
-        print("--- Bắt đầu vòng lặp mới ---")
-        if setup_room():
-            fight()
-        else:
-            print("Lỗi thiết lập phòng, thử lại sau 5s...")
+        print("=== Bắt đầu vòng lặp mới ===")
+        win = focus_game()
+        if win is None:
+            print("Không thao tác được lên cửa sổ game, thử lại sau 5s...")
             time.sleep(5)
+            continue
+        move_to_boss(win)
+
+        print(f"Đợi {LOAD_WAIT}s cho game load vào trận...")
+        time.sleep(LOAD_WAIT)
+
+        shoot_round()
+
+        print(f"Đợi boss rồng giết và {DEATH_WAIT}s rồi lặp lại bước đầu...")
+        time.sleep(DEATH_WAIT)
+
 
 if __name__ == "__main__":
     # Tạo thư mục templates nếu chưa có
     if not os.path.exists(TEMPLATE_DIR):
         os.makedirs(TEMPLATE_DIR)
         print(f"Vui lòng bỏ các ảnh mẫu vào thư mục '{TEMPLATE_DIR}'")
-    
+
     main()

@@ -43,14 +43,7 @@ def main():
         os.makedirs("templates")
         
     template_list = [
-        "sua_thong_tin",
-        "pho_ban_don",
-        "dung_si_5",
-        "anh_hung",
-        "dong_y",
-        "bat_dau",
-        "luot_cua_toi",
-        "ket_thuc"
+        "boss_rong"
     ]
     
     print("Tool hỗ trợ chụp ảnh mẫu cho Gunny Auto")
