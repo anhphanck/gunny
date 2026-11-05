@@ -78,14 +78,14 @@ def setup_room():
     time.sleep(1)
     
     if not click_template("dung_si_5"): 
-        print("=> Lỗi: Không tìm thấy phó bản 'Dũng sĩ luyện tập 5'. Bạn hãy kiểm tra lại ảnh mẫu này.")
-        return False
-    time.sleep(1)
-    
-    if not click_template("anh_hung"): 
-        print("=> Lỗi: Không tìm thấy nút mức độ 'Anh Hùng'")
-        return False
-    time.sleep(1)
+        print("=> Cảnh báo: Không tìm thấy phó bản 'Dũng sĩ luyện tập 5'. Bỏ qua và ấn 'Đồng ý' luôn...")
+    else:
+        time.sleep(1)
+        
+        if not click_template("anh_hung"): 
+            print("=> Lỗi: Không tìm thấy nút mức độ 'Anh Hùng'")
+            return False
+        time.sleep(1)
     
     if not click_template("dong_y"): 
         print("=> Lỗi: Không tìm thấy nút 'Đồng ý'")
