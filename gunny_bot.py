@@ -19,12 +19,12 @@ MOVE_CLICK_Y_RATIO = 0.40
 
 # Góc ngắm mong muốn và góc mặc định mà game reset về đầu mỗi lượt.
 # DEFAULT_ANGLE: sửa cho khớp đúng con số góc hiện ra khi bắt đầu lượt.
-ANGLE_TARGET = 44
-DEFAULT_ANGLE = 20
+ANGLE_TARGET = 45
+DEFAULT_ANGLE = 22
 
 # Thời gian giữ Space tương ứng với lực 55 (bạn cân chỉnh).
-POWER_HOLD_MIN = 2.05
-POWER_HOLD_MAX = 2.15
+POWER_HOLD_MIN = 2.25
+POWER_HOLD_MAX = 2.45
 
 SHOT_COUNT = 6          # số lần bắn mỗi lượt
 SHOT_INTERVAL = 9.5     # giây giữa các lần bắn
@@ -32,7 +32,7 @@ SHOT2_DELAY = 10        # giây đợi sau lượt bắn thứ 2 (trước lư�
 SHOT3_DELAY = 11        # giây đợi sau lượt bắn thứ 3 (trước lượt 4)
 LOAD_WAIT = 8           # giây đợi game load vào trận
 DEATH_WAIT = 20         # giây đợi sau khi boss rồng giết nhân vật
-KEY_PRESS_DELAY = 0.05  # delay giữa các lần bấm phím chỉnh góc
+KEY_PRESS_DELAY = 0.03  # delay giữa các lần bấm phím chỉnh góc
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
 pyautogui.FAILSAFE = True
