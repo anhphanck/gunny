@@ -5,7 +5,7 @@ import random
 
 # ================== CẤU HÌNH ==================
 TEMPLATE_DIR = "templates"
-CONFIDENCE = 0.8
+CONFIDENCE = 0.65
 
 # Một phần tiêu đề cửa sổ game Gunny (không phân biệt hoa/thường).
 # Bot sẽ tự đưa cửa sổ này lên trước để click/phím vào đúng game.
@@ -19,20 +19,22 @@ MOVE_CLICK_Y_RATIO = 0.40
 
 # Góc ngắm mong muốn và góc mặc định mà game reset về đầu mỗi lượt.
 # DEFAULT_ANGLE: sửa cho khớp đúng con số góc hiện ra khi bắt đầu lượt.
-ANGLE_TARGET = 45
-DEFAULT_ANGLE = 22
+ANGLE_TARGET = 46
+DEFAULT_ANGLE = 23
 
 # Thời gian giữ Space tương ứng với lực 55 (bạn cân chỉnh).
 POWER_HOLD_MIN = 2.25
 POWER_HOLD_MAX = 2.45
 
 SHOT_COUNT = 6          # số lần bắn mỗi lượt
-SHOT_INTERVAL = 9.5     # giây giữa các lần bắn
-SHOT2_DELAY = 10        # giây đợi sau lượt bắn thứ 2 (trước lượt 3)
-SHOT3_DELAY = 11        # giây đợi sau lượt bắn thứ 3 (trước lượt 4)
-LOAD_WAIT = 8           # giây đợi game load vào trận
-DEATH_WAIT = 20         # giây đợi sau khi boss rồng giết nhân vật
-KEY_PRESS_DELAY = 0.03  # delay giữa các lần bấm phím chỉnh góc
+SHOT_INTERVAL = 12     # giây giữa các lần bắn
+SHOT2_DELAY = 15        # giây đợi sau lượt bắn thứ 2 (trước lượt 3)
+SHOT3_DELAY = 15.5       # giây đợi sau lượt bắn thứ 3 (trước lượt 4)
+SHOT4_DELAY = 15        # giây đợi sau lượt bắn thứ 4 (trước lượt 5)
+SHOT5_DELAY = 15        # giây đợi sau lượt bắn thứ 5 (trước lượt 6)
+LOAD_WAIT = 15           # giây đợi game load vào trận
+DEATH_WAIT = 5         # giây đợi sau khi boss rồng giết nhân vật
+KEY_PRESS_DELAY = 0.02  # delay giữa các lần bấm phím chỉnh góc
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
 pyautogui.FAILSAFE = True
@@ -116,21 +118,22 @@ def set_angle(target):
 
 
 def move_to_boss(win):
-    """Cách 1 giây click di chuyển 1 lần để tìm boss rồng, khi thấy thì ấn vào boss."""
+    """Thấy boss rồng thì ấn vào boss luôn; chưa thấy mới click di chuyển để tìm."""
     x = win.left + int(win.width * MOVE_CLICK_X_RATIO)
     y = win.top + int(win.height * MOVE_CLICK_Y_RATIO)
 
     attempt = 0
     while True:
+        # Ưu tiên ấn boss nếu đã thấy, không click di chuyển nữa
+        if click_template("boss_rong", timeout=0.3, click=True):
+            return True
+
+        # Chưa thấy boss mới click di chuyển 1 đoạn để tìm
         attempt += 1
-        print(f"[{attempt}] Click di chuyển nhân vật tại ({x}, {y})...")
+        print(f"[{attempt}] Chưa thấy boss, click di chuyển nhân vật tại ({x}, {y})...")
         pyautogui.moveTo(x, y, duration=0.2)
         pyautogui.click()
-        time.sleep(0.8)  # cách 0,8 giây lại ấn di chuyển
-
-        # Tìm boss rồng, thấy thì ấn vào boss và xong bước di chuyển
-        if click_template("boss_rong", timeout=0.5, click=True):
-            return True
+        time.sleep(0.5)  # cách 0,8 giây lại ấn di chuyển
 
 
 def shoot_round():
@@ -167,13 +170,14 @@ def shoot_round():
         pyautogui.keyUp("space")
 
         if i < SHOT_COUNT:
-            # Sau lượt 2 đợi 10s, sau lượt 3 đợi 11s, các lượt khác đợi 9,5s
-            if i == 2:
-                delay = SHOT2_DELAY
-            elif i == 3:
-                delay = SHOT3_DELAY
-            else:
-                delay = SHOT_INTERVAL
+            # Thời gian đợi riêng sau mỗi lượt bắn, còn lại dùng SHOT_INTERVAL
+            delays = {
+                2: SHOT2_DELAY,
+                3: SHOT3_DELAY,
+                4: SHOT4_DELAY,
+                5: SHOT5_DELAY,
+            }
+            delay = delays.get(i, SHOT_INTERVAL)
             print(f"Đợi {delay}s cho lượt bắn tiếp theo...")
             time.sleep(delay)
 
