@@ -14,8 +14,8 @@ GAME_WINDOW_TITLE = "gunny"
 # Vị trí click để nhân vật chạy 1 đoạn, tính theo TỈ LỆ trong cửa sổ game (0.0 - 1.0).
 # 0.0 = mép trái/trên cửa sổ game, 1.0 = mép phải/dưới cửa sổ game.
 # Nhờ vậy điểm click luôn nằm trong game dù cửa sổ ở đâu trên màn hình.
-MOVE_CLICK_X_RATIO = 0.65
-MOVE_CLICK_Y_RATIO = 0.40
+MOVE_CLICK_X_RATIO = 0.60
+MOVE_CLICK_Y_RATIO = 0.46
 
 # Góc ngắm mong muốn và góc mặc định mà game reset về đầu mỗi lượt.
 # DEFAULT_ANGLE: sửa cho khớp đúng con số góc hiện ra khi bắt đầu lượt.
@@ -24,7 +24,7 @@ DEFAULT_ANGLE = 23
 
 # Thời gian giữ Space tương ứng với lực 55 (bạn cân chỉnh).
 POWER_HOLD_MIN = 2.25
-POWER_HOLD_MAX = 2.45
+POWER_HOLD_MAX = 2.50
 
 SHOT_COUNT = 6          # số lần bắn mỗi lượt
 SHOT_INTERVAL = 12     # giây giữa các lần bắn
@@ -33,7 +33,7 @@ SHOT3_DELAY = 15.5       # giây đợi sau lượt bắn thứ 3 (trước lư�
 SHOT4_DELAY = 15        # giây đợi sau lượt bắn thứ 4 (trước lượt 5)
 SHOT5_DELAY = 15        # giây đợi sau lượt bắn thứ 5 (trước lượt 6)
 LOAD_WAIT = 15           # giây đợi game load vào trận
-DEATH_WAIT = 5         # giây đợi sau khi boss rồng giết nhân vật
+DEATH_WAIT = 7         # giây đợi sau khi boss rồng giết nhân vật
 KEY_PRESS_DELAY = 0.02  # delay giữa các lần bấm phím chỉnh góc
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
@@ -157,7 +157,7 @@ def shoot_round():
             time.sleep(0.3)
 
         # Lượt thứ 4 dùng combo b, 1, 4; các lượt khác dùng 1, 2, 4
-        skills = ("b", "1", "4") if i == 4 else ("1", "2", "4")
+        skills = ("b", "1","1", "4") if i == 4 else ("1", "2", "4")
         print(f"Dùng kỹ năng {', '.join(skills)}...")
         for skill in skills:
             pyautogui.press(skill)
