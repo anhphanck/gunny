@@ -65,9 +65,44 @@ def wait_for_my_turn(timeout=60):
         time.sleep(0.5)
     return False
 
+def extra_fire(max_turns=3):
+    """Bắn bồi thêm 3 lượt (ấn b, e, 1, 4) khi boss vẫn chưa chết."""
+    for i in range(1, max_turns + 1):
+        print(f"Bắn thêm lượt {i}/{max_turns}: ấn 'b', 'e', '1', '4'...")
+        pyautogui.press('b')
+        time.sleep(0.3)
+        pyautogui.press('e')
+        time.sleep(0.3)
+        pyautogui.press('1')
+        time.sleep(0.5)
+        pyautogui.press('4')
+        time.sleep(0.5)
+        time.sleep(0.5)
+
+        hold_time = random.uniform(POWER_65_MIN, POWER_65_MAX)
+        print(f"Bắn lực 65 (giữ Space trong {hold_time:.2f}s)...")
+        pyautogui.keyDown('space')
+        time.sleep(hold_time)
+        pyautogui.keyUp('space')
+
+        if i < max_turns:
+            delay = 9
+            print(f"Đợi {delay} giây cho lượt bắn bồi tiếp theo...")
+            time.sleep(delay)
+    return max_turns
+
 def setup_room():
     print("--- Đang thiết lập phòng ---")
-    if not click_template("sua_thong_tin"): 
+    found = click_template("sua_thong_tin")
+    if not found:
+        # Không thấy nút 'Sửa thông tin' => boss chưa chết, vẫn đang trong trận.
+        print("=> Không tìm thấy nút 'Sửa thông tin' (boss chưa chết, vẫn trong trận).")
+        print("=> Bắn bồi thêm 3 lượt (ấn 'b', 'e', '1', '4')...")
+        extra_fire()
+        print("Đã bắn thêm. Đợi 18s để nhận thưởng và quay lại phòng...")
+        time.sleep(18)
+        found = click_template("sua_thong_tin")
+    if not found:
         print("=> Lỗi: Không tìm thấy nút 'Sửa thông tin'")
         return False
     time.sleep(1.5)
@@ -134,7 +169,7 @@ def fight():
             # Thời gian giãn cách mặc định ngẫu nhiên 11-12s
             delay = random.uniform(11, 12)
             if i == 2:
-                delay = 13 # Lượt 3 thêm 2s (11+2)
+                delay = 14 # Lượt 3 thêm 2s (11+2)
             elif i == 3:
                 delay = 14 # Lượt 4 thêm 1s (13+1)
                 
