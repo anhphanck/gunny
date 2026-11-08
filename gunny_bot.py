@@ -30,10 +30,10 @@ SHOT_COUNT = 6          # số lần bắn mỗi lượt
 SHOT_INTERVAL = 12     # giây giữa các lần bắn
 SHOT2_DELAY = 15        # giây đợi sau lượt bắn thứ 2 (trước lượt 3)
 SHOT3_DELAY = 15.5       # giây đợi sau lượt bắn thứ 3 (trước lượt 4)
-SHOT4_DELAY = 15        # giây đợi sau lượt bắn thứ 4 (trước lượt 5)
-SHOT5_DELAY = 15        # giây đợi sau lượt bắn thứ 5 (trước lượt 6)
-LOAD_WAIT = 15           # giây đợi game load vào trận
-DEATH_WAIT = 7         # giây đợi sau khi boss rồng giết nhân vật
+SHOT4_DELAY = 16.5        # giây đợi sau lượt bắn thứ 4 (trước lượt 5)
+SHOT5_DELAY = 13        # giây đợi sau lượt bắn thứ 5 (trước lượt 6)
+LOAD_WAIT = 16         # giây đợi game load vào trận
+DEATH_WAIT = 10         # giây đợi sau khi boss rồng giết nhân vật
 KEY_PRESS_DELAY = 0.02  # delay giữa các lần bấm phím chỉnh góc
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
@@ -150,14 +150,19 @@ def shoot_round():
             set_angle(ANGLE_TARGET)
             time.sleep(0.3)
 
-        # Chỉ lượt thứ 3 mới bấm 'e' trước
-        if i == 3:
+        # Lượt thứ 3 và lượt cuối bấm 'e' trước
+        if i == 3 or i == SHOT_COUNT:
             print("Bấm phím 'e'...")
             pyautogui.press("e")
             time.sleep(0.3)
 
-        # Lượt thứ 4 dùng combo b, 1, 4; các lượt khác dùng 1, 2, 4
-        skills = ("b", "1","1", "4") if i == 4 else ("1", "2", "4")
+        # Bộ kỹ năng riêng từng lượt, mặc định là 1, 2, 4
+        if i == 4:
+            skills = ("b", "c", "1", "1", "4")
+        elif i == 5:
+            skills = ("z", "1", "2", "4")
+        else:
+            skills = ("1", "2", "4")
         print(f"Dùng kỹ năng {', '.join(skills)}...")
         for skill in skills:
             pyautogui.press(skill)
