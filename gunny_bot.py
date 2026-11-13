@@ -33,7 +33,7 @@ SHOT3_DELAY = 15.5       # giây đợi sau lượt bắn thứ 3 (trước lư�
 SHOT4_DELAY = 16.5        # giây đợi sau lượt bắn thứ 4 (trước lượt 5)
 SHOT5_DELAY = 12.5        # giây đợi sau lượt bắn thứ 5 (trước lượt 6)
 LOAD_WAIT = 16         # giây đợi game load vào trận
-DEATH_WAIT = 31         # giây đợi sau khi boss rồng giết nhân vật
+DEATH_WAIT = 34         # giây đợi sau khi boss rồng giết nhân vật
 KEY_PRESS_DELAY = 0.02  # delay giữa các lần bấm phím chỉnh góc
 
 # Phím tắt dừng bot: Ctrl+C trong terminal hoặc di chuột về góc trên-trái màn hình
